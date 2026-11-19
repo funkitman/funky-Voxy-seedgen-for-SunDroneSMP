@@ -171,6 +171,13 @@ final class VoxygenGenerationService {
 		}
 
 		ClientLevel level = client.level;
+		VoxygenConfig.WorldgenProfile profile =
+				client.getSingleplayerServer() == null ? config.profileFor(serverAddress) : null;
+		if (client.getSingleplayerServer() == null
+				&& profile == null && config.requireWorldgenProfileInMultiplayer) {
+			retire(Component.literal("Funky Voxygen: no enabled worldgen profile for this server"));
+			return;
+		}
 		configureWorkers(config.threads);
 		ResourceKey<Level> dimension = level.dimension();
 		if (!isSupportedDimension(dimension)) {
@@ -195,7 +202,7 @@ final class VoxygenGenerationService {
 		long priorityCenter = freecamPriorityCenter(client, config.generateForFreecam);
 		Session current = session;
 		if (current != null
-				&& (current.level != level || current.seed != seed || current.engine != engine)) {
+				&& (current.level != level || current.seed != seed || current.engine != engine || current.profile != profile)) {
 			current.retire();
 			state = Component.translatable("command.voxygen.state.restarting");
 		}
@@ -219,7 +226,8 @@ final class VoxygenGenerationService {
 							centerZ,
 							radius,
 							priorityCenter,
-							config.threads);
+							config.threads,
+							profile);
 			session = current;
 			state =
 					Component.translatable(
@@ -335,6 +343,7 @@ final class VoxygenGenerationService {
 		private final ClientLevel level;
 		private final WorldEngine engine;
 		private final long seed;
+		private final VoxygenConfig.WorldgenProfile profile;
 		private volatile int centerX;
 		private volatile int centerZ;
 		private volatile int radius;
@@ -387,10 +396,12 @@ final class VoxygenGenerationService {
 				int centerZ,
 				int radius,
 				long priorityCenter,
-				int workerCount) {
+				int workerCount,
+				VoxygenConfig.WorldgenProfile profile) {
 			this.level = level;
 			this.engine = engine;
 			this.seed = seed;
+			this.profile = profile;
 			this.centerX = centerX;
 			this.centerZ = centerZ;
 			this.radius = radius;
@@ -405,7 +416,7 @@ final class VoxygenGenerationService {
 			EXECUTOR.execute(
 					() -> {
 						try {
-							context = GenerationContext.create(level, dimension, seed);
+							context = GenerationContext.create(level, dimension, seed, profile);
 							if (!retiring && session == this) {
 								state =
 										Component.translatable(
@@ -1109,6 +1120,15 @@ final class VoxygenGenerationService {
 		if (owner.retiring || !owner.engine.isLive()) {
 			throw new CancellationException("Voxygen world is no longer live");
 		}
+		// Protect the old pregenerated vanilla area around SunDroneSMP spawn.
+		// Server-provided Voxy LOD is not blocked by this local-generation guard.
+		if (owner.profile != null && owner.profile.minGenerationDistanceFromSpawnBlocks > 0
+				&& Level.OVERWORLD.equals(owner.level.dimension())) {
+			long dx = (long) chunkX * 16L + 8L - owner.profile.spawnX;
+			long dz = (long) chunkZ * 16L + 8L - owner.profile.spawnZ;
+			long radius = owner.profile.minGenerationDistanceFromSpawnBlocks;
+			if (dx * dx + dz * dz < radius * radius) return true;
+		}
 		if (!forcedRetry && hasVoxyData(owner.engine, owner.context.height, chunkX, chunkZ)) {
 			owner.skippedVoxy.incrementAndGet();
 			return true;
@@ -1268,6 +1288,7 @@ final class VoxygenGenerationService {
 		private final StructureTemplateManager structureTemplates;
 		private final ChunkGeneratorStructureState structureState;
 		private final LevelStorageSource.LevelStorageAccess storageAccess;
+		private final VoxygenWorldgenPacks.Loaded loadedWorldgen;
 		private final ConcurrentHashMap<Long, ProtoChunk> chunks = new ConcurrentHashMap<>();
 		private final ConcurrentHashMap<Long, GenerationStages> stageStates =
 				new ConcurrentHashMap<>();
@@ -1296,7 +1317,8 @@ final class VoxygenGenerationService {
 				ServerLevel serverLevel,
 				StructureTemplateManager structureTemplates,
 				ChunkGeneratorStructureState structureState,
-				LevelStorageSource.LevelStorageAccess storageAccess) {
+				LevelStorageSource.LevelStorageAccess storageAccess,
+				VoxygenWorldgenPacks.Loaded loadedWorldgen) {
 			this.sourceLevel = sourceLevel;
 			this.registries = registries;
 			this.height = height;
@@ -1310,6 +1332,7 @@ final class VoxygenGenerationService {
 			this.structureTemplates = structureTemplates;
 			this.structureState = structureState;
 			this.storageAccess = storageAccess;
+			this.loadedWorldgen = loadedWorldgen;
 			if (serverLevel == null) {
 				structureState.ensureStructuresGenerated();
 			}
@@ -1333,7 +1356,8 @@ final class VoxygenGenerationService {
 		}
 
 		private static GenerationContext create(
-				ClientLevel level, ResourceKey<Level> dimension, long seed) {
+				ClientLevel level, ResourceKey<Level> dimension, long seed,
+				VoxygenConfig.WorldgenProfile profile) {
 			Minecraft client = Minecraft.getInstance();
 			if (client.getSingleplayerServer() != null) {
 				ServerLevel serverLevel = client.getSingleplayerServer().getLevel(dimension);
@@ -1369,22 +1393,31 @@ final class VoxygenGenerationService {
 							serverLevel,
 							serverLevel.getStructureTemplateManager(),
 							virtualStructureState,
+							null,
 							null);
 				}
 			}
 
-			RegistryAccess registries = worldgenRegistries();
+			VoxygenWorldgenPacks.Loaded loadedWorldgen =
+					profile == null ? null : VoxygenWorldgenPacks.load(client, profile);
+			try {
+			RegistryAccess registries =
+					loadedWorldgen == null ? worldgenRegistries() : loadedWorldgen.registries();
 			Holder<NoiseGeneratorSettings> settings;
 			BiomeSource biomes;
 			if (Level.OVERWORLD.equals(dimension)) {
 				settings =
 						registries
 								.lookupOrThrow(Registries.NOISE_SETTINGS)
-								.getOrThrow(NoiseGeneratorSettings.OVERWORLD);
+								.getOrThrow(profile == null ? NoiseGeneratorSettings.OVERWORLD
+								: ResourceKey.create(Registries.NOISE_SETTINGS,
+										Identifier.parse(profile.overworldNoiseSettings)));
 				Holder<MultiNoiseBiomeSourceParameterList> preset =
 						registries
 								.lookupOrThrow(Registries.MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST)
-								.getOrThrow(MultiNoiseBiomeSourceParameterLists.OVERWORLD);
+								.getOrThrow(profile == null ? MultiNoiseBiomeSourceParameterLists.OVERWORLD
+								: ResourceKey.create(Registries.MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST,
+										Identifier.parse(profile.overworldBiomePreset)));
 				biomes = MultiNoiseBiomeSource.createFromPreset(preset);
 			} else if (Level.NETHER.equals(dimension)) {
 				settings =
@@ -1438,7 +1471,7 @@ final class VoxygenGenerationService {
 			}
 			StructureTemplateManager templates =
 					new StructureTemplateManager(
-							vanillaDataResources,
+						loadedWorldgen == null ? vanillaDataResources : loadedWorldgen.resources(),
 							access,
 							DataFixers.getDataFixer(),
 							registries.lookupOrThrow(Registries.BLOCK));
@@ -1462,7 +1495,12 @@ final class VoxygenGenerationService {
 					null,
 					templates,
 					structureState,
-					access);
+					access,
+					loadedWorldgen);
+			} catch (RuntimeException | Error error) {
+				if (loadedWorldgen != null) loadedWorldgen.close();
+				throw error;
+			}
 		}
 
 		private static RegistryAccess worldgenRegistries() {
@@ -2178,6 +2216,7 @@ final class VoxygenGenerationService {
 			}
 			closed = true;
 			clearGenerationCache();
+			if (loadedWorldgen != null) loadedWorldgen.close();
 			if (storageAccess != null) {
 				try {
 					storageAccess.close();
