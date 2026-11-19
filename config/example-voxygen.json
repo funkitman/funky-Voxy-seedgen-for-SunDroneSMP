@@ -30,7 +30,8 @@
       "overworldBiomePreset": "minecraft:overworld",
       "minGenerationDistanceFromSpawnBlocks": 10000,
       "spawnX": 0,
-      "spawnZ": 0
+      "spawnZ": 0,
+      "diagnosticOnly": true
     },
     "sundrone.tplinkdns.com": {
       "enabled": true,
@@ -52,7 +53,8 @@
       "overworldBiomePreset": "minecraft:overworld",
       "minGenerationDistanceFromSpawnBlocks": 10000,
       "spawnX": 0,
-      "spawnZ": 0
+      "spawnZ": 0,
+      "diagnosticOnly": true
     }
   }
 }

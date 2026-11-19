@@ -31,6 +31,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -78,7 +82,8 @@ public final class VoxygenWorldgenPacks {
                     if (parts.isEmpty()) throw new IllegalStateException("Empty local datapack: " + name);
                     stack.addAll(parts);
                 }
-                LOGGER.info("Local worldgen datapack selected: {}", path.getFileName());
+                LOGGER.info("[Funky.3] pack priority {} / {}: {} (SHA-256 {})",
+                        stack.size() - 1, profile.datapacks.size(), path.getFileName(), fingerprint(path));
             }
             // Order is vanilla -> listed packs. Later packs override earlier packs.
             resources = new MultiPackResourceManager(PackType.SERVER_DATA, stack);
@@ -88,7 +93,8 @@ public final class VoxygenWorldgenPacks {
                             resources, accessForLoading.listRegistries().toList(),
                             RegistryDataLoader.WORLD_REGISTRIES, Runnable::run)
                     .join();
-            LOGGER.info("Loaded {} local worldgen datapacks", profile.datapacks.size());
+            LOGGER.info("[Funky.3] Loaded {} local worldgen packs; final pack has highest priority. "
+                    + "Actual server order is NOT verified by the client.", profile.datapacks.size());
             return new Loaded(layers.replaceFrom(RegistryLayer.WORLD, world).compositeAccess(), resources);
         } catch (RuntimeException | Error failure) {
             if (resources != null) {
@@ -108,6 +114,9 @@ public final class VoxygenWorldgenPacks {
      * combined local worldgen registry rather than the vanilla biome preset.
      */
     public static NoiseBasedChunkGenerator loadOverworldGenerator(Loaded loaded) {
+        logSource(loaded, "minecraft:dimension/overworld.json");
+        logSource(loaded, "minecraft:worldgen/noise_settings/overworld.json");
+        logSource(loaded, "minecraft:worldgen/density_function/overworld/final_density.json");
         Identifier id = Identifier.parse("minecraft:dimension/overworld.json");
         Resource resource = loaded.resources().getResource(id).orElseThrow(() ->
                 new IllegalStateException(
@@ -137,6 +146,26 @@ public final class VoxygenWorldgenPacks {
             return noise;
         } catch (IOException problem) {
             throw new IllegalStateException("Cannot read local minecraft:dimension/overworld.json", problem);
+        }
+    }
+
+    private static void logSource(Loaded loaded, String identifier) {
+        Identifier id = Identifier.parse(identifier);
+        Optional<Resource> resource = loaded.resources().getResource(id);
+        LOGGER.info("[Funky.3] effective resource {} <- {}", identifier,
+                resource.map(Resource::sourcePackId).orElse("<MISSING>"));
+    }
+
+    private static String fingerprint(Path path) {
+        if (Files.isDirectory(path)) return "<directory; archive hash unavailable>";
+        try (InputStream stream = Files.newInputStream(path)) {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] buffer = new byte[65536];
+            int count;
+            while ((count = stream.read(buffer)) != -1) md.update(buffer, 0, count);
+            return HexFormat.of().formatHex(md.digest());
+        } catch (IOException | NoSuchAlgorithmException e) {
+            throw new IllegalStateException("Cannot fingerprint datapack: " + path, e);
         }
     }
 

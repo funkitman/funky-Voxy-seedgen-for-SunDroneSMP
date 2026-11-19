@@ -373,6 +373,7 @@ final class VoxygenGenerationService {
 		private final AtomicInteger inFlight = new AtomicInteger();
 		private volatile long activeRegion = NO_ACTIVE_REGION;
 		private final AtomicInteger generatedChunks = new AtomicInteger();
+		private final AtomicInteger diagnosticChunks = new AtomicInteger();
 		private final AtomicInteger insertedChunks = new AtomicInteger();
 		private final AtomicInteger insertedSections = new AtomicInteger();
 		private final AtomicInteger skippedVoxy = new AtomicInteger();
@@ -416,6 +417,11 @@ final class VoxygenGenerationService {
 			EXECUTOR.execute(
 					() -> {
 						try {
+							LOGGER.info("[Funky.3] worldgen session dimension={}, seed={}, dryrun={}, "
+											+ "legacy vanilla radius={} blocks",
+									dimension.identifier(), seed,
+									profile != null && profile.diagnosticOnly,
+									profile == null ? 0 : profile.minGenerationDistanceFromSpawnBlocks);
 							context = GenerationContext.create(level, dimension, seed, profile);
 							if (!retiring && session == this) {
 								state =
@@ -1129,7 +1135,9 @@ final class VoxygenGenerationService {
 			long radius = owner.profile.minGenerationDistanceFromSpawnBlocks;
 			if (dx * dx + dz * dz < radius * radius) return true;
 		}
-		if (!forcedRetry && hasVoxyData(owner.engine, owner.context.height, chunkX, chunkZ)) {
+		if (!forcedRetry && !(
+				owner.profile != null && owner.profile.diagnosticOnly)
+				&& hasVoxyData(owner.engine, owner.context.height, chunkX, chunkZ)) {
 			owner.skippedVoxy.incrementAndGet();
 			return true;
 		}
@@ -1140,6 +1148,22 @@ final class VoxygenGenerationService {
 		GeneratedChunk generated = owner.context.generatePreparedFull(chunkX, chunkZ);
 		ProtoChunk chunk = generated.chunk();
 		owner.generatedChunks.incrementAndGet();
+		if (owner.profile != null && owner.profile.diagnosticOnly) {
+			// Critical safety feature: terrain can be inspected without polluting
+			// the Voxy cache or racing the server-provided real LOD ingest.
+			int testNumber = owner.diagnosticChunks.incrementAndGet();
+			if (testNumber <= 12 || testNumber % 128 == 0) {
+				int height = chunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, 8, 8);
+				var surfaceBiome = chunk.getNoiseBiome(chunkX * 4 + 2,
+						Math.floorDiv(height, 4), chunkZ * 4 + 2);
+				LOGGER.info("[Funky.3][DRYRUN] generated chunk=({}, {}) surfaceY={} biome={} "
+								+ "(NO Voxy writes; compare with REAL server chunks at x={}, z={})",
+						chunkX, chunkZ, height, surfaceBiome.unwrapKey()
+								.map(key -> key.identifier().toString()).orElse("<inline>"),
+						chunkX * 16 + 8, chunkZ * 16 + 8);
+			}
+			return true;
+		}
 		if (!forcedRetry && hasVoxyData(owner.engine, owner.context.height, chunkX, chunkZ)) {
 			owner.skippedVoxy.incrementAndGet();
 			return true;

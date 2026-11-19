@@ -46,6 +46,14 @@ public final class VoxygenMod implements ClientModInitializer {
 		root.then(
 				ClientCommands.literal("status")
 						.executes(context -> sendStatus(context.getSource())));
+		root.then(ClientCommands.literal("diagnose")
+				.executes(context -> sendDiagnosis(context.getSource())));
+		root.then(ClientCommands.literal("dryrun")
+				.executes(context -> sendDryRun(context.getSource()))
+				.then(ClientCommands.literal("on")
+						.executes(context -> setDryRun(context.getSource(), true)))
+				.then(ClientCommands.literal("off")
+						.executes(context -> setDryRun(context.getSource(), false))));
 		root.then(
 				ClientCommands.literal("toggle")
 						.executes(context -> setEnabled(context.getSource(), !config.enable)));
@@ -155,6 +163,66 @@ public final class VoxygenMod implements ClientModInitializer {
 										? "command.voxygen.option.on"
 										: "command.voxygen.option.off"),
 						VoxygenGenerationService.describeState()));
+		return Command.SINGLE_SUCCESS;
+	}
+
+	private static int sendDiagnosis(FabricClientCommandSource source) {
+		String server = requireCurrentWorld(source);
+		if (server == null) return 0;
+		VoxygenConfig.WorldgenProfile profile = config.profileFor(server);
+		if (profile == null && Minecraft.getInstance().getSingleplayerServer() == null) {
+			source.sendError(Component.literal("[Funky.3] No active datapack profile for " + server));
+			return 0;
+		}
+		source.sendFeedback(Component.literal(
+				"[Funky.3] Server=" + server
+				+ ", seed=" + seedText(getEffectiveSeed(Minecraft.getInstance(), server))
+				+ ", worldgen mode=" + (profile == null ? "singleplayer/native" : "multiplayer/datapack")
+				+ ", dryrun=" + (profile != null && profile.diagnosticOnly)));
+		if (profile != null) {
+			source.sendFeedback(Component.literal(
+					"[Funky.3] Packs=" + profile.datapacks.size()
+					+ ", old vanilla radius=" + profile.minGenerationDistanceFromSpawnBlocks
+					+ " blocks, spawn=" + profile.spawnX + "," + profile.spawnZ));
+			for (int i = 0; i < profile.datapacks.size(); i++) {
+				source.sendFeedback(Component.literal(
+						"[Funky.3] pack #" + (i + 1) + " " + profile.datapacks.get(i)));
+			}
+		}
+		source.sendFeedback(Component.literal(
+				"[Funky.3] Check latest.log for sha256, dimension/noise source pack IDs; "
+				+ "Voxy cache may contain old synthetic LOD."));
+		return Command.SINGLE_SUCCESS;
+	}
+
+	private static int sendDryRun(FabricClientCommandSource source) {
+		String server = requireCurrentWorld(source);
+		if (server == null) return 0;
+		VoxygenConfig.WorldgenProfile profile = config.profileFor(server);
+		if (profile == null) {
+			source.sendError(Component.literal("[Funky.3] Dryrun works only with an active multiplayer profile"));
+			return 0;
+		}
+		source.sendFeedback(Component.literal(
+				"[Funky.3] Dryrun " + (profile.diagnosticOnly ? "ON (NO Voxy writes)" : "OFF (Voxy writes enabled)")));
+		return Command.SINGLE_SUCCESS;
+	}
+
+	private static int setDryRun(FabricClientCommandSource source, boolean dryrun) {
+		String server = requireCurrentWorld(source);
+		if (server == null) return 0;
+		VoxygenConfig.WorldgenProfile profile = config.profileFor(server);
+		if (profile == null) {
+			source.sendError(Component.literal("[Funky.3] No enabled worldgen profile for " + server));
+			return 0;
+		}
+		profile.diagnosticOnly = dryrun;
+		config.save();
+		VoxygenGenerationService.invalidate();
+		source.sendFeedback(Component.literal(
+				"[Funky.3] Dryrun " + (dryrun
+					? "ON: generating for diagnostics only, NO Voxy writes"
+					: "OFF: generated chunks MAY be inserted into Voxy")));
 		return Command.SINGLE_SUCCESS;
 	}
 

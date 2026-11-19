@@ -3,6 +3,10 @@
 This is a **source-only experimental port until CI passes and a real client is tested**.
 
 - [ ] GitHub Actions Java 25 / Loom compile and package succeeds.
+- [ ] In a cloned Prism instance set `/voxygen dryrun on` before testing (no Voxy writes). Use `/voxygen diagnose`.
+- [ ] Compare generated dryrun sample `x/z, y, biome` with actual SunDroneSMP real chunks at the exact coordinates outside 10,000 blocks.
+- [ ] Compare SHA-256 of all datapack ZIPs and resource provenance against server copies. Confirm actual server order and any Fabric load conditions.
+- [ ] Only turn dryrun off after matching several real chunks; use a separate Voxy cache for write tests.
 - [ ] Fabric 26.3 client starts with only the fork installed (NOT original Voxygen too).
 - [ ] `/voxygen status` reports the expected seed `493136979358296920`.
 - [ ] Configured packs load, with exact hashes and priority order copied from SunDroneSMP. Inspect logs for `Local worldgen datapack selected`.

@@ -12,6 +12,16 @@ Client-side Voxy LOD generator for **Minecraft 26.3 / Fabric**, based on Wenhan'
 - No arbitrary custom world generator is supported: fail closed unless the parsed Overworld generator is noise-based.
 - Verify the resulting terrain against real server chunks outside the old 10,000-block vanilla spawn radius. This is a build-verified experimental release, not yet an in-game certified terrain match.
 
+### Funky.3 diagnostic and safety controls
+
+The exact source of the server's old versus new terrain is still unverified; **this build is NOT a proven terrain-match fix**.
+
+- `/voxygen diagnose`: shows connected server, seed, profile, exact pack order, and whether dryrun is on. Detailed per-file SHA-256 and effective Overworld/density resource origin are printed in `latest.log`.
+- `/voxygen dryrun on`: generate datapack virtual chunks but **do not write synthetic LOD to Voxy storage**; logs chunk coordinates, surface height, and biome for comparison with real server chunks. Use this first outside the 10,000-block old vanilla area. `/voxygen dryrun off`: opt into writes *after* validation.
+- Dryrun generates even where Voxy already has cached chunks, which makes it useful for spotting incorrect generator output. It cannot validate server pack order automatically.
+- The Voxy cache persists between mod versions; disabling generation does not delete old wrong cached LOD. Test using a **separate Prism profile and a clean Voxy cache** (backup old storage first).
+- The multiplayer virtual stage pipeline is not identical to the native singleplayer server-level generator pipeline. Even with matching pack hashes/priority, surfaces may differ. No guarantee of exact server parity.
+
 ### Goal
 
 Use the original fast Voxygen LOD engine in Funky Ultimate connected to SunDroneSMP, but use local copies of **exactly the same Terralith + Tectonic + Terratonic integration files** as the server. No server datapacks are transferred automatically. The world seed and pack order must match.
@@ -37,7 +47,7 @@ Use the original fast Voxygen LOD engine in Funky Ultimate connected to SunDrone
 
 ### Build
 
-Java 25 and Gradle compatible with Fabric Loom 1.17.21 are required. In a network-enabled environment run `gradle build`. Compiled jar (after successful build): `build/libs/funky-voxygen-1.2.10-funky.2.jar`. A GitHub Actions workflow is included for build verification.
+Java 25 and Gradle compatible with Fabric Loom 1.17.21 are required. In a network-enabled environment run `gradle build`. Compiled jar (after successful build): `build/libs/funky-voxygen-1.2.10-funky.3.jar`. A GitHub Actions workflow is included for build verification.
 
 ### Attribution
 
