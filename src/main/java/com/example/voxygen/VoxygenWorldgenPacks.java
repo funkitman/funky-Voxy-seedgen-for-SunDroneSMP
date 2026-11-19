@@ -82,7 +82,7 @@ public final class VoxygenWorldgenPacks {
                     if (parts.isEmpty()) throw new IllegalStateException("Empty local datapack: " + name);
                     stack.addAll(parts);
                 }
-                LOGGER.info("[Funky.3] pack priority {} / {}: {} (SHA-256 {})",
+                LOGGER.info("[Funky.4] pack priority {} / {}: {} (SHA-256 {})",
                         stack.size() - 1, profile.datapacks.size(), path.getFileName(), fingerprint(path));
             }
             // Order is vanilla -> listed packs. Later packs override earlier packs.
@@ -93,7 +93,7 @@ public final class VoxygenWorldgenPacks {
                             resources, accessForLoading.listRegistries().toList(),
                             RegistryDataLoader.WORLD_REGISTRIES, Runnable::run)
                     .join();
-            LOGGER.info("[Funky.3] Loaded {} local worldgen packs; final pack has highest priority. "
+            LOGGER.info("[Funky.4] Loaded {} local worldgen packs; final pack has highest priority. "
                     + "Actual server order is NOT verified by the client.", profile.datapacks.size());
             return new Loaded(layers.replaceFrom(RegistryLayer.WORLD, world).compositeAccess(), resources);
         } catch (RuntimeException | Error failure) {
@@ -152,7 +152,7 @@ public final class VoxygenWorldgenPacks {
     private static void logSource(Loaded loaded, String identifier) {
         Identifier id = Identifier.parse(identifier);
         Optional<Resource> resource = loaded.resources().getResource(id);
-        LOGGER.info("[Funky.3] effective resource {} <- {}", identifier,
+        LOGGER.info("[Funky.4] effective resource {} <- {}", identifier,
                 resource.map(Resource::sourcePackId).orElse("<MISSING>"));
     }
 

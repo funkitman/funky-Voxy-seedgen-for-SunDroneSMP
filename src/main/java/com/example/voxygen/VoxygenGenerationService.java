@@ -417,11 +417,13 @@ final class VoxygenGenerationService {
 			EXECUTOR.execute(
 					() -> {
 						try {
-							LOGGER.info("[Funky.3] worldgen session dimension={}, seed={}, dryrun={}, "
+							LOGGER.info("[Funky.4] worldgen session dimension={}, seed={}, dryrun={}, "
 											+ "legacy vanilla radius={} blocks",
 									dimension.identifier(), seed,
 									profile != null && profile.diagnosticOnly,
 									profile == null ? 0 : profile.minGenerationDistanceFromSpawnBlocks);
+							LOGGER.info("[Funky.4] requested terrainMode={}",
+									profile == null ? "<native singleplayer>" : profile.terrainMode);
 							context = GenerationContext.create(level, dimension, seed, profile);
 							if (!retiring && session == this) {
 								state =
@@ -1156,7 +1158,7 @@ final class VoxygenGenerationService {
 				int height = chunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, 8, 8);
 				var surfaceBiome = chunk.getNoiseBiome(chunkX * 4 + 2,
 						Math.floorDiv(height, 4), chunkZ * 4 + 2);
-				LOGGER.info("[Funky.3][DRYRUN] generated chunk=({}, {}) surfaceY={} biome={} "
+				LOGGER.info("[Funky.4][DRYRUN] generated chunk=({}, {}) surfaceY={} biome={} "
 								+ "(NO Voxy writes; compare with REAL server chunks at x={}, z={})",
 						chunkX, chunkZ, height, surfaceBiome.unwrapKey()
 								.map(key -> key.identifier().toString()).orElse("<inline>"),
@@ -1470,14 +1472,36 @@ final class VoxygenGenerationService {
 					loadedWorldgen != null && Level.OVERWORLD.equals(dimension)
 							? VoxygenWorldgenPacks.loadOverworldGenerator(loadedWorldgen)
 							: new NoiseBasedChunkGenerator(biomes, settings);
-			// Important: Never rewrite Terratonic final_density or cave/router functions.
-			// Exact terrain first; selective performance optimizations may be reintroduced
-			// only after comparing output with real SunDroneSMP chunks.
-			ChunkGenerator generator =
-					loadedWorldgen != null
-							? structureGenerator
-							: VoxygenWorldgenRules.simplifyGenerator(
+			// Funky.4: v2/v3 forced the full datapack final_density on every
+			// multiplayer world. The reported terrain then diverged badly.
+			// Restore v1-style simplified relief, but retain the REAL Terralith
+			// biome source decoded from the datapack dimension in structureGenerator.
+			// Keep the full generator as an explicit comparison mode.
+			ChunkGenerator generator;
+			if (loadedWorldgen != null && Level.OVERWORLD.equals(dimension)) {
+				String mode = profile.terrainMode == null ? "legacy_hybrid" : profile.terrainMode;
+				switch (mode) {
+					case "legacy_hybrid" -> generator =
+							VoxygenWorldgenRules.simplifyGenerator(
 									structureGenerator, registries, dimension);
+					case "full_datapack" -> generator = structureGenerator;
+					default -> throw new IllegalArgumentException(
+							"Unsupported Funky.4 terrainMode: " + mode
+									+ " (expected legacy_hybrid or full_datapack)");
+				}
+				LOGGER.info("[Funky.4] terrainMode={} generatorBiomeSource={}, "
+						+ "virtualSettings={}, structureSettings={}, densitySimplified={}",
+						mode,
+						generator.getBiomeSource().getClass().getSimpleName(),
+						((NoiseBasedChunkGenerator) generator).generatorSettings()
+								.unwrapKey().map(Object::toString).orElse("<inline/v1-style>"),
+						structureGenerator.generatorSettings()
+								.unwrapKey().map(Object::toString).orElse("<inline>"),
+						"legacy_hybrid".equals(mode));
+			} else {
+				generator = VoxygenWorldgenRules.simplifyGenerator(
+						structureGenerator, registries, dimension);
+			}
 			NoiseGeneratorSettings activeSettings =
 					((NoiseBasedChunkGenerator) generator).generatorSettings().value();
 			RandomState randomState = RandomState.create(noises, seed, activeSettings);

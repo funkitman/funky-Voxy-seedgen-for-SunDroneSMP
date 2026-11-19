@@ -57,6 +57,12 @@ public final class VoxygenMod implements ClientModInitializer {
 		root.then(
 				ClientCommands.literal("toggle")
 						.executes(context -> setEnabled(context.getSource(), !config.enable)));
+		root.then(ClientCommands.literal("terrain")
+				.executes(context -> sendTerrainMode(context.getSource()))
+				.then(ClientCommands.literal("hybrid")
+						.executes(context -> setTerrainMode(context.getSource(), "legacy_hybrid")))
+				.then(ClientCommands.literal("full")
+						.executes(context -> setTerrainMode(context.getSource(), "full_datapack"))));
 		root.then(
 				ClientCommands.literal("radius")
 						.executes(context -> sendRadius(context.getSource()))
@@ -178,7 +184,8 @@ public final class VoxygenMod implements ClientModInitializer {
 				"[Funky.3] Server=" + server
 				+ ", seed=" + seedText(getEffectiveSeed(Minecraft.getInstance(), server))
 				+ ", worldgen mode=" + (profile == null ? "singleplayer/native" : "multiplayer/datapack")
-				+ ", dryrun=" + (profile != null && profile.diagnosticOnly)));
+				+ ", dryrun=" + (profile != null && profile.diagnosticOnly)
+				+ ", terrain=" + (profile == null ? "native" : profile.terrainMode)));
 		if (profile != null) {
 			source.sendFeedback(Component.literal(
 					"[Funky.3] Packs=" + profile.datapacks.size()
@@ -192,6 +199,37 @@ public final class VoxygenMod implements ClientModInitializer {
 		source.sendFeedback(Component.literal(
 				"[Funky.3] Check latest.log for sha256, dimension/noise source pack IDs; "
 				+ "Voxy cache may contain old synthetic LOD."));
+		return Command.SINGLE_SUCCESS;
+	}
+
+	private static int sendTerrainMode(FabricClientCommandSource source) {
+		String server = requireCurrentWorld(source);
+		if (server == null) return 0;
+		VoxygenConfig.WorldgenProfile profile = config.profileFor(server);
+		if (profile == null) {
+			source.sendError(Component.literal("[Funky.4] Terrain mode only applies to an active multiplayer profile"));
+			return 0;
+		}
+		source.sendFeedback(Component.literal(
+				"[Funky.4] Terrain mode=" + profile.terrainMode
+					+ " (hybrid = v1-style relief + Terralith biomes; full = v2/v3 Terratonic settings)"));
+		return Command.SINGLE_SUCCESS;
+	}
+
+	private static int setTerrainMode(FabricClientCommandSource source, String mode) {
+		String server = requireCurrentWorld(source);
+		if (server == null) return 0;
+		VoxygenConfig.WorldgenProfile profile = config.profileFor(server);
+		if (profile == null) {
+			source.sendError(Component.literal("[Funky.4] No active multiplayer worldgen profile"));
+			return 0;
+		}
+		profile.terrainMode = mode;
+		config.save();
+		VoxygenGenerationService.invalidate();
+		source.sendFeedback(Component.literal(
+				"[Funky.4] Terrain mode=" + mode + ". Worldgen restarted. "
+						+ "Use dryrun before writing Voxy LOD."));
 		return Command.SINGLE_SUCCESS;
 	}
 

@@ -7,6 +7,10 @@ This is a **source-only experimental port until CI passes and a real client is t
 - [ ] Compare generated dryrun sample `x/z, y, biome` with actual SunDroneSMP real chunks at the exact coordinates outside 10,000 blocks.
 - [ ] Compare SHA-256 of all datapack ZIPs and resource provenance against server copies. Confirm actual server order and any Fabric load conditions.
 - [ ] Only turn dryrun off after matching several real chunks; use a separate Voxy cache for write tests.
+- [ ] In Funky.4 hybrid mode compare surface Y / biome at x=28936,z=-1016, x=29432,z=-648 and on nearby real land outside the 10k radius.
+- [ ] Toggle `/voxygen terrain full` while dryrun is ON and confirm it reproduces Funky.2/3 diagnostic output and differs from hybrid.
+- [ ] Confirm mode selection is saved per server address and invalidates in-flight generator.
+- [ ] Do not interpret yellow progress bar as new visible LOD when dryrun is ON.
 - [ ] Fabric 26.3 client starts with only the fork installed (NOT original Voxygen too).
 - [ ] `/voxygen status` reports the expected seed `493136979358296920`.
 - [ ] Configured packs load, with exact hashes and priority order copied from SunDroneSMP. Inspect logs for `Local worldgen datapack selected`.

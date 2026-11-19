@@ -22,6 +22,33 @@ The exact source of the server's old versus new terrain is still unverified; **t
 - The Voxy cache persists between mod versions; disabling generation does not delete old wrong cached LOD. Test using a **separate Prism profile and a clean Voxy cache** (backup old storage first).
 - The multiplayer virtual stage pipeline is not identical to the native singleplayer server-level generator pipeline. Even with matching pack hashes/priority, surfaces may differ. No guarantee of exact server parity.
 
+### Funky.4 - hybrid terrain restoration (experimental)
+
+User testing shows Funky.1 matches the server terrain shape better than Funky.2/3,
+which use the full Terratonic noise router and yielded severe terrain mismatch.
+
+Funky.4 **changes the actual multiplayer terrain algorithm**:
+
+- Default `terrainMode: "legacy_hybrid"` reconstructs the v1-style simplified
+  density terrain but keeps Terralith's **explicit real biome source** from
+  `minecraft:dimension/overworld.json`. That addresses the primary
+  v1-versus-v2 tradeoff without reverting biome selection to vanilla.
+- `/voxygen terrain hybrid` selects this mode and restarts generation.
+- `/voxygen terrain full` restores the Funky.2/3 full Terratonic terrain
+  for coordinate-by-coordinate diagnostic comparison.
+- `/voxygen terrain` displays the current selection. `/voxygen diagnose`
+  includes the mode.
+- **Dry-run remains enabled by default**; no new LOD is written to Voxy
+  until the user explicitly runs `/voxygen dryrun off`. This is to protect
+  existing server-provided and previously generated LOD data.
+
+**Limitations:** This hybrid is NOT a proven exact SunDroneSMP terrain match.
+Without server level.dat generator metadata, enabled-pack order and actual
+chunk comparisons, we cannot prove the live server runs the same generator.
+Retaining v1 density simplification means Terratonic's advanced mountains,
+aquifers and other noise effects may still differ. The short-term goal is
+closer relief and correct biome placement; exact parity requires in-game tests.
+
 ### Goal
 
 Use the original fast Voxygen LOD engine in Funky Ultimate connected to SunDroneSMP, but use local copies of **exactly the same Terralith + Tectonic + Terratonic integration files** as the server. No server datapacks are transferred automatically. The world seed and pack order must match.
@@ -47,7 +74,7 @@ Use the original fast Voxygen LOD engine in Funky Ultimate connected to SunDrone
 
 ### Build
 
-Java 25 and Gradle compatible with Fabric Loom 1.17.21 are required. In a network-enabled environment run `gradle build`. Compiled jar (after successful build): `build/libs/funky-voxygen-1.2.10-funky.3.jar`. A GitHub Actions workflow is included for build verification.
+Java 25 and Gradle compatible with Fabric Loom 1.17.21 are required. In a network-enabled environment run `gradle build`. Compiled jar (after successful build): `build/libs/funky-voxygen-1.2.10-funky.4.jar`. A GitHub Actions workflow is included for build verification.
 
 ### Attribution
 

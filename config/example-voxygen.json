@@ -5,8 +5,8 @@
   "radius": 32,
   "threads": 4,
   "seeds": {
-    "pi.serveminecraft.net": 493136979358296900,
-    "sundrone.tplinkdns.com": 493136979358296900
+    "pi.serveminecraft.net": 493136979358296920,
+    "sundrone.tplinkdns.com": 493136979358296920
   },
   "requireWorldgenProfileInMultiplayer": true,
   "worldgenProfiles": {
@@ -31,7 +31,8 @@
       "minGenerationDistanceFromSpawnBlocks": 10000,
       "spawnX": 0,
       "spawnZ": 0,
-      "diagnosticOnly": true
+      "diagnosticOnly": true,
+      "terrainMode": "legacy_hybrid"
     },
     "sundrone.tplinkdns.com": {
       "enabled": true,
@@ -54,7 +55,8 @@
       "minGenerationDistanceFromSpawnBlocks": 10000,
       "spawnX": 0,
       "spawnZ": 0,
-      "diagnosticOnly": true
+      "diagnosticOnly": true,
+      "terrainMode": "legacy_hybrid"
     }
   }
 }
