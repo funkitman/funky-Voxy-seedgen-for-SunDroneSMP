@@ -2,10 +2,11 @@
 	"schemaVersion": 1,
 	"id": "voxygen",
 	"version": "${version}",
-	"name": "Voxygen",
-	"description": "Generates missing vanilla chunks into Voxy using per-server seeds and client-side commands.",
+	"name": "Funky Voxygen for SunDroneSMP",
+	"description": "Wenhan Voxygen 1.2.10 with opt-in client-local multiplayer worldgen datapacks.",
 	"authors": [
-		"Wenhan"
+		"Wenhan (original Voxygen)",
+		"funkitman (Funky fork; AI-assisted modifications)"
 	],
 	"environment": "client",
 	"entrypoints": {

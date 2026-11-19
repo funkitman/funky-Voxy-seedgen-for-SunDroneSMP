@@ -12,7 +12,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public final class VoxygenConfig {
@@ -27,6 +30,24 @@ public final class VoxygenConfig {
 	public int radius = 64;
 	public int threads = 32;
 	public Map<String, Long> seeds = new HashMap<>();
+	public boolean requireWorldgenProfileInMultiplayer = true;
+	public Map<String, WorldgenProfile> worldgenProfiles = new HashMap<>();
+
+	public static final class WorldgenProfile {
+		public boolean enabled = false;
+		public List<String> datapacks = new ArrayList<>();
+		public String overworldNoiseSettings = "minecraft:overworld";
+		public String overworldBiomePreset = "minecraft:overworld";
+		public int minGenerationDistanceFromSpawnBlocks = 0;
+		public int spawnX = 0;
+		public int spawnZ = 0;
+	}
+
+	public WorldgenProfile profileFor(String serverAddress) {
+		if (serverAddress == null || worldgenProfiles == null) return null;
+		WorldgenProfile profile = worldgenProfiles.get(serverAddress.trim().toLowerCase(Locale.ROOT));
+		return profile != null && profile.enabled ? profile : null;
+	}
 
 	public static VoxygenConfig load() {
 		if (!Files.exists(CONFIG_PATH)) {
@@ -43,6 +64,12 @@ public final class VoxygenConfig {
 			}
 			if (config.seeds == null) {
 				config.seeds = new HashMap<>();
+			}
+			if (config.worldgenProfiles == null) {
+				config.worldgenProfiles = new HashMap<>();
+			}
+			for (WorldgenProfile profile : config.worldgenProfiles.values()) {
+				if (profile != null && profile.datapacks == null) profile.datapacks = new ArrayList<>();
 			}
 			if (config.radius < 1) {
 				config.radius = 64;
