@@ -417,12 +417,12 @@ final class VoxygenGenerationService {
 			EXECUTOR.execute(
 					() -> {
 						try {
-							LOGGER.info("[Funky.4] worldgen session dimension={}, seed={}, dryrun={}, "
+							LOGGER.info("[Funky.5] worldgen session dimension={}, seed={}, dryrun={}, "
 											+ "legacy vanilla radius={} blocks",
 									dimension.identifier(), seed,
 									profile != null && profile.diagnosticOnly,
 									profile == null ? 0 : profile.minGenerationDistanceFromSpawnBlocks);
-							LOGGER.info("[Funky.4] requested terrainMode={}",
+							LOGGER.info("[Funky.5] requested terrainMode={}",
 									profile == null ? "<native singleplayer>" : profile.terrainMode);
 							context = GenerationContext.create(level, dimension, seed, profile);
 							if (!retiring && session == this) {
@@ -1158,7 +1158,7 @@ final class VoxygenGenerationService {
 				int height = chunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, 8, 8);
 				var surfaceBiome = chunk.getNoiseBiome(chunkX * 4 + 2,
 						Math.floorDiv(height, 4), chunkZ * 4 + 2);
-				LOGGER.info("[Funky.4][DRYRUN] generated chunk=({}, {}) surfaceY={} biome={} "
+				LOGGER.info("[Funky.5][DRYRUN] generated chunk=({}, {}) surfaceY={} biome={} "
 								+ "(NO Voxy writes; compare with REAL server chunks at x={}, z={})",
 						chunkX, chunkZ, height, surfaceBiome.unwrapKey()
 								.map(key -> key.identifier().toString()).orElse("<inline>"),
@@ -1315,6 +1315,7 @@ final class VoxygenGenerationService {
 		private final ChunkGeneratorStructureState structureState;
 		private final LevelStorageSource.LevelStorageAccess storageAccess;
 		private final VoxygenWorldgenPacks.Loaded loadedWorldgen;
+		private final boolean parityWorldgen;
 		private final ConcurrentHashMap<Long, ProtoChunk> chunks = new ConcurrentHashMap<>();
 		private final ConcurrentHashMap<Long, GenerationStages> stageStates =
 				new ConcurrentHashMap<>();
@@ -1344,7 +1345,8 @@ final class VoxygenGenerationService {
 				StructureTemplateManager structureTemplates,
 				ChunkGeneratorStructureState structureState,
 				LevelStorageSource.LevelStorageAccess storageAccess,
-				VoxygenWorldgenPacks.Loaded loadedWorldgen) {
+				VoxygenWorldgenPacks.Loaded loadedWorldgen,
+				boolean parityWorldgen) {
 			this.sourceLevel = sourceLevel;
 			this.registries = registries;
 			this.height = height;
@@ -1359,6 +1361,7 @@ final class VoxygenGenerationService {
 			this.structureState = structureState;
 			this.storageAccess = storageAccess;
 			this.loadedWorldgen = loadedWorldgen;
+			this.parityWorldgen = parityWorldgen;
 			if (serverLevel == null) {
 				structureState.ensureStructuresGenerated();
 			}
@@ -1420,7 +1423,8 @@ final class VoxygenGenerationService {
 							serverLevel.getStructureTemplateManager(),
 							virtualStructureState,
 							null,
-							null);
+							null,
+							false);
 				}
 			}
 
@@ -1484,12 +1488,12 @@ final class VoxygenGenerationService {
 					case "legacy_hybrid" -> generator =
 							VoxygenWorldgenRules.simplifyGenerator(
 									structureGenerator, registries, dimension);
-					case "full_datapack" -> generator = structureGenerator;
+					case "full_datapack", "parity" -> generator = structureGenerator;
 					default -> throw new IllegalArgumentException(
-							"Unsupported Funky.4 terrainMode: " + mode
-									+ " (expected legacy_hybrid or full_datapack)");
+							"Unsupported Funky.5 terrainMode: " + mode
+									+ " (expected parity, legacy_hybrid or full_datapack)");
 				}
-				LOGGER.info("[Funky.4] terrainMode={} generatorBiomeSource={}, "
+				LOGGER.info("[Funky.5] terrainMode={} generatorBiomeSource={}, "
 						+ "virtualSettings={}, structureSettings={}, densitySimplified={}",
 						mode,
 						generator.getBiomeSource().getClass().getSimpleName(),
@@ -1536,7 +1540,10 @@ final class VoxygenGenerationService {
 							registries.lookupOrThrow(Registries.STRUCTURE_SET),
 							structureRandomState,
 							seed);
-			((VirtualStructureState) structureState).voxygen$markVirtual();
+			boolean parity = loadedWorldgen != null && profile != null
+					&& "parity".equals(profile.terrainMode);
+			// Use Minecraft's original concentric-ring algorithm in parity mode.
+			if (!parity) ((VirtualStructureState) structureState).voxygen$markVirtual();
 			return new GenerationContext(
 					level,
 					registries,
@@ -1551,7 +1558,8 @@ final class VoxygenGenerationService {
 					templates,
 					structureState,
 					access,
-					loadedWorldgen);
+					loadedWorldgen,
+					parity);
 			} catch (RuntimeException | Error error) {
 				if (loadedWorldgen != null) loadedWorldgen.close();
 				throw error;
@@ -1682,6 +1690,7 @@ final class VoxygenGenerationService {
 									seed,
 									structureTemplates,
 									structureGenerator,
+									parityWorldgen,
 									() ->
 											structureGenerator.createStructures(
 													registries,
@@ -1765,6 +1774,7 @@ final class VoxygenGenerationService {
 									seed,
 									structureTemplates,
 									structureGenerator,
+									parityWorldgen,
 									() ->
 											structureGenerator.createReferences(
 													world, structures, chunk));
@@ -1867,6 +1877,7 @@ final class VoxygenGenerationService {
 																seed,
 																structureTemplates,
 																structureGenerator,
+																parityWorldgen,
 																() ->
 																		structureGenerator
 																				.applyBiomeDecoration(
@@ -2008,7 +2019,7 @@ final class VoxygenGenerationService {
 										height,
 										containers,
 										null);
-						VoxygenWorldgenRules.registerChunk(created, dimension);
+						VoxygenWorldgenRules.registerChunk(created, dimension, parityWorldgen);
 						return created;
 					});
 		}
@@ -2883,7 +2894,7 @@ final class VoxygenGenerationService {
 		private boolean setBlock(Object[] args) {
 			BlockPos pos = (BlockPos) args[0];
 			BlockState state = (BlockState) args[1];
-			if (VoxygenWorldgenRules.shouldRejectGeneratedBlock(state)) {
+			if (!context.parityWorldgen && VoxygenWorldgenRules.shouldRejectGeneratedBlock(state)) {
 				return false;
 			}
 			ProtoChunk chunk = chunkAt(pos.getX() >> 4, pos.getZ() >> 4);
@@ -2927,7 +2938,9 @@ final class VoxygenGenerationService {
 			if (chunk != null) {
 				return chunk.getNoiseBiome(quartX, quartY, quartZ);
 			}
-			return chunks.values().iterator().next().getNoiseBiome(quartX, quartY, quartZ);
+			// In 26.3 this must come from the seeded generator biome source, NEVER an arbitrary chunk.
+			return context.generator.getBiomeSource().getNoiseBiome(
+					quartX, quartY, quartZ, context.randomState.sampler());
 		}
 
 		private Object invokeDefaultOrReturnZero(Object proxy, Method method, Object[] args)

@@ -31,6 +31,7 @@ public final class VoxygenConfig {
 	public int threads = 32;
 	public Map<String, Long> seeds = new HashMap<>();
 	public boolean requireWorldgenProfileInMultiplayer = true;
+	public int worldgenSchemaVersion = 0;
 	public Map<String, WorldgenProfile> worldgenProfiles = new HashMap<>();
 
 	public static final class WorldgenProfile {
@@ -40,7 +41,7 @@ public final class VoxygenConfig {
 		// LEGACY_HYBRID keeps the v1-style land relief while using Terralith's
 		// real biome source. FULL_DATAPACK reproduces v2/v3 generator selection.
 		// Neither is guaranteed to match the live server until compared in-game.
-		public String terrainMode = "legacy_hybrid";
+		public String terrainMode = "parity";
 		public List<String> datapacks = new ArrayList<>();
 		public String overworldNoiseSettings = "minecraft:overworld";
 		public String overworldBiomePreset = "minecraft:overworld";
@@ -74,13 +75,21 @@ public final class VoxygenConfig {
 			if (config.worldgenProfiles == null) {
 				config.worldgenProfiles = new HashMap<>();
 			}
+			boolean migrate = config.worldgenSchemaVersion < 5;
 			for (WorldgenProfile profile : config.worldgenProfiles.values()) {
 				if (profile != null) {
 					if (profile.datapacks == null) profile.datapacks = new ArrayList<>();
-					if (profile.terrainMode == null || profile.terrainMode.isBlank()) {
-						profile.terrainMode = "legacy_hybrid";
+					if (migrate) {
+						profile.terrainMode = "parity";
+						profile.diagnosticOnly = true;
+					} else if (profile.terrainMode == null || profile.terrainMode.isBlank()) {
+						profile.terrainMode = "parity";
 					}
 				}
+			}
+			if (migrate) {
+				config.worldgenSchemaVersion = 5;
+				LOGGER.warn("[Funky.5] Migrated multiplayer profiles to parity and dry-run; no Voxy writes.");
 			}
 			if (config.radius < 1) {
 				config.radius = 64;

@@ -34,7 +34,8 @@ abstract class FossilFeatureMixin {
 			RandomSource random,
 			BlockPos origin,
 			CallbackInfoReturnable<Boolean> callback) {
-		if (VoxygenWorldgenRules.isVirtualGeneration(world, origin)) {
+		if (VoxygenWorldgenRules.isVirtualGeneration(world, origin)
+				&& !WorldgenSeedContext.isParityMode()) {
 			callback.setReturnValue(false);
 			return;
 		}

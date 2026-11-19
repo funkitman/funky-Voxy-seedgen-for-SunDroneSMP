@@ -32,7 +32,8 @@ abstract class RuinedPortalStructureMixin {
 			WorldgenRandom random,
 			RuinedPortalStructure.Setup chosenSetup,
 			RuinedPortalStructure.Setup setup) {
-		if (!WorldgenSeedContext.isVirtualWorldActive()) {
+		if (!WorldgenSeedContext.isVirtualWorldActive()
+				|| WorldgenSeedContext.isParityMode()) {
 			return;
 		}
 

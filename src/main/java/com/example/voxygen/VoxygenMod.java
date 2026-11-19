@@ -59,6 +59,8 @@ public final class VoxygenMod implements ClientModInitializer {
 						.executes(context -> setEnabled(context.getSource(), !config.enable)));
 		root.then(ClientCommands.literal("terrain")
 				.executes(context -> sendTerrainMode(context.getSource()))
+				.then(ClientCommands.literal("parity")
+						.executes(context -> setTerrainMode(context.getSource(), "parity")))
 				.then(ClientCommands.literal("hybrid")
 						.executes(context -> setTerrainMode(context.getSource(), "legacy_hybrid")))
 				.then(ClientCommands.literal("full")
@@ -207,12 +209,12 @@ public final class VoxygenMod implements ClientModInitializer {
 		if (server == null) return 0;
 		VoxygenConfig.WorldgenProfile profile = config.profileFor(server);
 		if (profile == null) {
-			source.sendError(Component.literal("[Funky.4] Terrain mode only applies to an active multiplayer profile"));
+			source.sendError(Component.literal("[Funky.5] Terrain mode only applies to an active multiplayer profile"));
 			return 0;
 		}
 		source.sendFeedback(Component.literal(
-				"[Funky.4] Terrain mode=" + profile.terrainMode
-					+ " (hybrid = v1-style relief + Terralith biomes; full = v2/v3 Terratonic settings)"));
+				"[Funky.5] Terrain mode=" + profile.terrainMode
+					+ " (parity = original worldgen/biomes/features; full = v2/v3; hybrid = v1 relief)"));
 		return Command.SINGLE_SUCCESS;
 	}
 
@@ -221,14 +223,14 @@ public final class VoxygenMod implements ClientModInitializer {
 		if (server == null) return 0;
 		VoxygenConfig.WorldgenProfile profile = config.profileFor(server);
 		if (profile == null) {
-			source.sendError(Component.literal("[Funky.4] No active multiplayer worldgen profile"));
+			source.sendError(Component.literal("[Funky.5] No active multiplayer worldgen profile"));
 			return 0;
 		}
 		profile.terrainMode = mode;
 		config.save();
 		VoxygenGenerationService.invalidate();
 		source.sendFeedback(Component.literal(
-				"[Funky.4] Terrain mode=" + mode + ". Worldgen restarted. "
+				"[Funky.5] Terrain mode=" + mode + ". Worldgen restarted. "
 						+ "Use dryrun before writing Voxy LOD."));
 		return Command.SINGLE_SUCCESS;
 	}

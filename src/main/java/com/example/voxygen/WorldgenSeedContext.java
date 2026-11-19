@@ -10,6 +10,7 @@ public final class WorldgenSeedContext {
 	private static final ThreadLocal<Long> SEED = new ThreadLocal<>();
 	private static final ThreadLocal<StructureTemplateManager> TEMPLATES = new ThreadLocal<>();
 	private static final ThreadLocal<ChunkGenerator> GENERATOR = new ThreadLocal<>();
+	private static final ThreadLocal<Boolean> PARITY = new ThreadLocal<>();
 
 	private WorldgenSeedContext() {}
 
@@ -40,6 +41,18 @@ public final class WorldgenSeedContext {
 			StructureTemplateManager templates,
 			ChunkGenerator generator,
 			Runnable action) {
+		run(seed, templates, generator, false, action);
+	}
+
+	public static void run(
+			long seed,
+			StructureTemplateManager templates,
+			ChunkGenerator generator,
+			boolean parity,
+			Runnable action) {
+		Boolean previousParity = PARITY.get();
+		PARITY.set(parity);
+		try {
 		StructureTemplateManager previousTemplates = TEMPLATES.get();
 		ChunkGenerator previousGenerator = GENERATOR.get();
 		if (templates == null) {
@@ -71,6 +84,14 @@ public final class WorldgenSeedContext {
 						}
 					}
 				});
+		} finally {
+			if (previousParity == null) PARITY.remove();
+			else PARITY.set(previousParity);
+		}
+	}
+
+	public static boolean isParityMode() {
+		return Boolean.TRUE.equals(PARITY.get());
 	}
 
 	public static StructureTemplateManager templates() {

@@ -25,7 +25,8 @@ abstract class UndergroundFeatureMixin {
 			RandomSource random,
 			BlockPos origin,
 			CallbackInfoReturnable<Boolean> callback) {
-		if (VoxygenWorldgenRules.isVirtualGeneration(world, origin)) {
+		if (VoxygenWorldgenRules.isVirtualGeneration(world, origin)
+				&& !com.example.voxygen.WorldgenSeedContext.isParityMode()) {
 			callback.setReturnValue(false);
 		}
 	}

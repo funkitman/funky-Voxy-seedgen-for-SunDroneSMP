@@ -30,7 +30,8 @@ abstract class PlacedFeatureMixin {
 			BlockPos origin,
 			boolean biomeCheck,
 			CallbackInfoReturnable<Boolean> callback) {
-		if (!VoxygenWorldgenRules.isVirtualGeneration(level, origin)) {
+		if (!VoxygenWorldgenRules.isVirtualGeneration(level, origin)
+				|| com.example.voxygen.WorldgenSeedContext.isParityMode()) {
 			return;
 		}
 

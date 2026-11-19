@@ -72,21 +72,32 @@ public final class VoxygenWorldgenRules {
 					"minecraft:spring_lava_frozen");
 	private static final Map<ChunkAccess, ResourceKey<Level>> VIRTUAL_CHUNKS =
 			new ConcurrentHashMap<>();
+	private static final Set<ChunkAccess> PARITY_CHUNKS = ConcurrentHashMap.newKeySet();
 
 	private VoxygenWorldgenRules() {}
 
 	public static void registerChunk(ChunkAccess chunk, ResourceKey<Level> dimension) {
+		registerChunk(chunk, dimension, false);
+	}
+
+	public static void registerChunk(ChunkAccess chunk, ResourceKey<Level> dimension, boolean parity) {
 		VIRTUAL_CHUNKS.put(chunk, dimension);
+		if (parity) PARITY_CHUNKS.add(chunk);
 	}
 
 	public static void unregisterChunk(ChunkAccess chunk) {
 		if (chunk != null) {
 			VIRTUAL_CHUNKS.remove(chunk);
+			PARITY_CHUNKS.remove(chunk);
 		}
 	}
 
 	public static boolean isVirtualChunk(ChunkAccess chunk) {
 		return chunk != null && VIRTUAL_CHUNKS.containsKey(chunk);
+	}
+
+	public static boolean isParityChunk(ChunkAccess chunk) {
+		return chunk != null && PARITY_CHUNKS.contains(chunk);
 	}
 
 	public static ChunkGenerator simplifyGenerator(

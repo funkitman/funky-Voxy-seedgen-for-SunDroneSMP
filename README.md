@@ -49,6 +49,18 @@ Retaining v1 density simplification means Terratonic's advanced mountains,
 aquifers and other noise effects may still differ. The short-term goal is
 closer relief and correct biome placement; exact parity requires in-game tests.
 
+### Funky.5 — datapack parity mode (experimental)
+
+Funky.5 changes the multiplayer generation algorithm rather than merely adding logging:
+
+- New `/voxygen terrain parity` uses the original Terralith Overworld biome source and the original Terratonic noise settings, with no `simplifyGenerator`.
+- For parity mode the existing client-local chunk scheduler follows the vanilla dependency progression (structures, structure references, biomes, terrain, features) and invokes the exposed vanilla `ChunkGenerator` methods. Suppression of cave carvers, underground features, excluded structures and rejected blocks is bypassed in parity mode.
+- Restores vanilla `ChunkGeneratorStructureState` concentric-ring positions rather than using Voxygen's approximate ring algorithm.
+- Repairs a critical 26.3 virtual world biome lookup: when the requested neighboring chunk is missing, sample the actual generator's biome source and seeded climate sampler, never the stored biome of a random unrelated chunk.
+- Existing configs migrate once to parity and **dryrun=true** for both server addresses (with no generated LOD writes) and retain the original 64-bit seed.
+
+**Limitation:** The full `ChunkStatusTasks` runtime requires a real `ServerLevel` from a Minecraft server. A connected remote client cannot construct this from the seed and ZIPs alone. This build calls Minecraft's genuine generator routines with virtual chunks and vanilla dependency ordering; it is **not** a full native dedicated-server chunk scheduler, and 1:1 equality with SunDroneSMP is NOT yet verified. Test heights/biomes/structures in dryrun before enabling writes.
+
 ### Goal
 
 Use the original fast Voxygen LOD engine in Funky Ultimate connected to SunDroneSMP, but use local copies of **exactly the same Terralith + Tectonic + Terratonic integration files** as the server. No server datapacks are transferred automatically. The world seed and pack order must match.
@@ -74,7 +86,7 @@ Use the original fast Voxygen LOD engine in Funky Ultimate connected to SunDrone
 
 ### Build
 
-Java 25 and Gradle compatible with Fabric Loom 1.17.21 are required. In a network-enabled environment run `gradle build`. Compiled jar (after successful build): `build/libs/funky-voxygen-1.2.10-funky.4.jar`. A GitHub Actions workflow is included for build verification.
+Java 25 and Gradle compatible with Fabric Loom 1.17.21 are required. In a network-enabled environment run `gradle build`. Compiled jar (after successful build): `build/libs/funky-voxygen-1.2.10-funky.5.jar`. A GitHub Actions workflow is included for build verification.
 
 ### Attribution
 

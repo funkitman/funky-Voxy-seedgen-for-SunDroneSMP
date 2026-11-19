@@ -9,6 +9,7 @@
     "sundrone.tplinkdns.com": 493136979358296920
   },
   "requireWorldgenProfileInMultiplayer": true,
+  "worldgenSchemaVersion": 5,
   "worldgenProfiles": {
     "pi.serveminecraft.net": {
       "enabled": true,
@@ -32,7 +33,7 @@
       "spawnX": 0,
       "spawnZ": 0,
       "diagnosticOnly": true,
-      "terrainMode": "legacy_hybrid"
+      "terrainMode": "parity"
     },
     "sundrone.tplinkdns.com": {
       "enabled": true,
@@ -56,7 +57,7 @@
       "spawnX": 0,
       "spawnZ": 0,
       "diagnosticOnly": true,
-      "terrainMode": "legacy_hybrid"
+      "terrainMode": "parity"
     }
   }
 }

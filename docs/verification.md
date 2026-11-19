@@ -3,6 +3,11 @@
 This is a **source-only experimental port until CI passes and a real client is tested**.
 
 - [ ] GitHub Actions Java 25 / Loom compile and package succeeds.
+- [ ] Verify v5 migration selects parity and dryrun for both addresses.
+- [ ] Compare at least 3 known server chunks with dryrun logs (terrain height, biome, structures).
+- [ ] Verify no skipped carvers, no skipped structures and exact vanilla concentric rings in parity.
+- [ ] Confirm missing-neighbor biome lookup samples seeded generator source.
+- [ ] Only write synthetic LOD after parity is validated against real SunDroneSMP chunks.
 - [ ] In a cloned Prism instance set `/voxygen dryrun on` before testing (no Voxy writes). Use `/voxygen diagnose`.
 - [ ] Compare generated dryrun sample `x/z, y, biome` with actual SunDroneSMP real chunks at the exact coordinates outside 10,000 blocks.
 - [ ] Compare SHA-256 of all datapack ZIPs and resource provenance against server copies. Confirm actual server order and any Fabric load conditions.

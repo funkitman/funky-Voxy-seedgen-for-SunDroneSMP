@@ -28,7 +28,8 @@ abstract class NoiseBasedChunkGeneratorMixin {
 			WorldGenRegion region,
 			MaterialRule materialRule,
 			CallbackInfo callback) {
-		if (VoxygenWorldgenRules.isVirtualChunk(chunk)) {
+		if (VoxygenWorldgenRules.isVirtualChunk(chunk)
+				&& !VoxygenWorldgenRules.isParityChunk(chunk)) {
 			callback.cancel();
 		}
 	}

@@ -44,6 +44,7 @@ abstract class StructureMixin {
 			Predicate<Holder<Biome>> validBiome,
 			CallbackInfoReturnable<StructureStart> callback) {
 		if (WorldgenSeedContext.isVirtualWorldActive()
+				&& !WorldgenSeedContext.isParityMode()
 				&& VoxygenWorldgenRules.shouldSkipStructure(structure)) {
 			callback.setReturnValue(StructureStart.INVALID_START);
 		}
