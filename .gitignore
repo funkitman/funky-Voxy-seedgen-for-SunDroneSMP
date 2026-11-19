@@ -1,0 +1,8 @@
+.gradle/
+build/
+run/
+voxygen-virtual/
+.idea/
+*.iml
+config/voxygen.json
+config/funky-voxygen-packs/

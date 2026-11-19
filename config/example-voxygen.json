@@ -1,0 +1,40 @@
+{
+  "enable": true,
+  "showProgress": true,
+  "generateForFreecam": false,
+  "radius": 64,
+  "threads": 4,
+  "seeds": {
+    "sundrone.tplinkdns.com": 493136979358296900,
+    "pi.serveminecraft.net": 493136979358296900
+  },
+  "requireWorldgenProfileInMultiplayer": true,
+  "worldgenProfiles": {
+    "sundrone.tplinkdns.com": {
+      "enabled": true,
+      "datapacks": [
+        "Terralith.zip",
+        "Tectonic.zip",
+        "Terratonic.zip"
+      ],
+      "overworldNoiseSettings": "minecraft:overworld",
+      "overworldBiomePreset": "minecraft:overworld",
+      "minGenerationDistanceFromSpawnBlocks": 10000,
+      "spawnX": 0,
+      "spawnZ": 0
+    },
+    "pi.serveminecraft.net": {
+      "enabled": true,
+      "datapacks": [
+        "Terralith.zip",
+        "Tectonic.zip",
+        "Terratonic.zip"
+      ],
+      "overworldNoiseSettings": "minecraft:overworld",
+      "overworldBiomePreset": "minecraft:overworld",
+      "minGenerationDistanceFromSpawnBlocks": 10000,
+      "spawnX": 0,
+      "spawnZ": 0
+    }
+  }
+}
