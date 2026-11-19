@@ -9,7 +9,9 @@ This is a **source-only experimental port until CI passes and a real client is t
 - [ ] Singleplayer Voxygen test still matches before/after fork (control test).
 - [ ] Multiplayer without profile does not generate local LOD.
 - [ ] Multiplayer with missing pack fails closed; check log first cause.
-- [ ] Test real vs client-generated chunks at same coordinates beyond 10,000 blocks, no shaders, separate/new Voxy cache.
+- [ ] Confirm Funky.2 logs `Decoded datapack overworld generator` with Terralith biome source.
+- [ ] Compare terrain height, biome and trees at the same coordinates beyond 10,000 blocks, no shaders, separate/new Voxy cache.
+- [ ] Confirm Terratonic noise router final_density is retained, not replaced with vanilla.
 - [ ] Inside legacy pregenerated area, Voxygen leaves new output absent; Voxy Server still populates LOD (verify).
 - [ ] Test at legacy area boundary including +/-X/Z diagonals and structures/trees/biomes.
 - [ ] Verify Voxy Server late chunk deliveries do not flicker or get replaced by stale synthetic LOD.

@@ -4,6 +4,14 @@ Client-side Voxy LOD generator for **Minecraft 26.3 / Fabric**, based on Wenhan'
 
 **Status: experimental source release.** This fork adds opt-in per-server local worldgen datapacks. Minecraft 26.3 + Java 25 are required. Compilation and in-game correctness are not yet verified.
 
+### Funky.2 terrain-correctness fix
+
+- Multiplayer now decodes the actual `minecraft:dimension/overworld.json` generator from the selected local datapacks, rather than rebuilding a vanilla preset biome source. Terralith's explicit biome mapping is retained.
+- Terratonic's datapack-overridden `minecraft:overworld` noise settings and original `final_density` noise router are preserved. Funky.1 accidentally replaced that density function with simplified vanilla terrain.
+- This correctness-first mode may be slower than upstream's simplified generator; performance comes after matching real server terrain. Local ZIP priority order and worldgen pack versions must match the server.
+- No arbitrary custom world generator is supported: fail closed unless the parsed Overworld generator is noise-based.
+- Verify the resulting terrain against real server chunks outside the old 10,000-block vanilla spawn radius. This is a build-verified experimental release, not yet an in-game certified terrain match.
+
 ### Goal
 
 Use the original fast Voxygen LOD engine in Funky Ultimate connected to SunDroneSMP, but use local copies of **exactly the same Terralith + Tectonic + Terratonic integration files** as the server. No server datapacks are transferred automatically. The world seed and pack order must match.
@@ -29,7 +37,7 @@ Use the original fast Voxygen LOD engine in Funky Ultimate connected to SunDrone
 
 ### Build
 
-Java 25 and Gradle compatible with Fabric Loom 1.17.21 are required. In a network-enabled environment run `gradle build`. Compiled jar (after successful build): `build/libs/funky-voxygen-1.2.10-funky.1.jar`. A GitHub Actions workflow is included for build verification.
+Java 25 and Gradle compatible with Fabric Loom 1.17.21 are required. In a network-enabled environment run `gradle build`. Compiled jar (after successful build): `build/libs/funky-voxygen-1.2.10-funky.2.jar`. A GitHub Actions workflow is included for build verification.
 
 ### Attribution
 

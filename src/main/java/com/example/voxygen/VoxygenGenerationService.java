@@ -1443,10 +1443,17 @@ final class VoxygenGenerationService {
 
 			HolderGetter<NormalNoise> noises = registries.lookupOrThrow(Registries.NOISE);
 			NoiseBasedChunkGenerator structureGenerator =
-					new NoiseBasedChunkGenerator(biomes, settings);
+					loadedWorldgen != null && Level.OVERWORLD.equals(dimension)
+							? VoxygenWorldgenPacks.loadOverworldGenerator(loadedWorldgen)
+							: new NoiseBasedChunkGenerator(biomes, settings);
+			// Important: Never rewrite Terratonic final_density or cave/router functions.
+			// Exact terrain first; selective performance optimizations may be reintroduced
+			// only after comparing output with real SunDroneSMP chunks.
 			ChunkGenerator generator =
-					VoxygenWorldgenRules.simplifyGenerator(
-							structureGenerator, registries, dimension);
+					loadedWorldgen != null
+							? structureGenerator
+							: VoxygenWorldgenRules.simplifyGenerator(
+									structureGenerator, registries, dimension);
 			NoiseGeneratorSettings activeSettings =
 					((NoiseBasedChunkGenerator) generator).generatorSettings().value();
 			RandomState randomState = RandomState.create(noises, seed, activeSettings);
@@ -1475,7 +1482,7 @@ final class VoxygenGenerationService {
 							access,
 							DataFixers.getDataFixer(),
 							registries.lookupOrThrow(Registries.BLOCK));
-			RandomState structureRandomState = RandomState.create(noises, seed, settings.value());
+			RandomState structureRandomState = RandomState.create(noises, seed, structureGenerator.generatorSettings().value());
 			ChunkGeneratorStructureState structureState =
 					structureGenerator.createState(
 							registries.lookupOrThrow(Registries.STRUCTURE_SET),

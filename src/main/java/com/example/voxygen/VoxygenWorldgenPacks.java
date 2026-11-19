@@ -1,11 +1,18 @@
 package com.example.voxygen;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.mojang.serialization.JsonOps;
+
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.LayeredRegistryAccess;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.RegistryDataLoader;
+import net.minecraft.resources.RegistryOps;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.RegistryLayer;
 import net.minecraft.server.packs.FilePackResources;
 import net.minecraft.server.packs.PackLocationInfo;
@@ -16,9 +23,14 @@ import net.minecraft.server.packs.PathPackResources;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.server.packs.resources.MultiPackResourceManager;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -86,6 +98,45 @@ public final class VoxygenWorldgenPacks {
                 for (int i = 1; i < stack.size(); i++) stack.get(i).close();
             }
             throw failure; // Fail closed: never silently fall back to incorrect vanilla terrain.
+        }
+    }
+
+    /**
+     * Decode the REAL minecraft:overworld generator from the active pack stack.
+     * This retains Terralith's explicit climate-to-biome mapping. Registry references,
+     * including the settings overwritten by Terratonic, resolve against the same
+     * combined local worldgen registry rather than the vanilla biome preset.
+     */
+    public static NoiseBasedChunkGenerator loadOverworldGenerator(Loaded loaded) {
+        Identifier id = Identifier.parse("minecraft:dimension/overworld.json");
+        Resource resource = loaded.resources().getResource(id).orElseThrow(() ->
+                new IllegalStateException(
+                        "Missing minecraft:dimension/overworld.json; this profile needs the same overworld generator as SunDroneSMP"));
+        try (Reader reader = resource.openAsReader()) {
+            JsonElement json = JsonParser.parseReader(reader);
+            if (!json.isJsonObject()) {
+                throw new IllegalStateException("Invalid minecraft:dimension/overworld.json (expected JSON object)");
+            }
+            JsonObject dimension = json.getAsJsonObject();
+            if (!dimension.has("generator") || !dimension.get("generator").isJsonObject()) {
+                throw new IllegalStateException("Missing generator in minecraft:dimension/overworld.json");
+            }
+            ChunkGenerator parsed = ChunkGenerator.CODEC.parse(
+                    RegistryOps.create(JsonOps.INSTANCE, loaded.registries()),
+                    dimension.get("generator")
+            ).getOrThrow();
+            if (!(parsed instanceof NoiseBasedChunkGenerator noise)) {
+                throw new IllegalStateException(
+                        "SunDroneSMP profile requires a noise-based overworld generator, got " +
+                        parsed.getClass().getName());
+            }
+            LOGGER.info("Decoded datapack overworld generator: {}, biome source: {}, settings: {}",
+                    noise.getClass().getSimpleName(),
+                    noise.getBiomeSource().getClass().getSimpleName(),
+                    noise.generatorSettings().unwrapKey().map(Object::toString).orElse("<inline>"));
+            return noise;
+        } catch (IOException problem) {
+            throw new IllegalStateException("Cannot read local minecraft:dimension/overworld.json", problem);
         }
     }
 
