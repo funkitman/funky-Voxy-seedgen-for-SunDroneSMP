@@ -36,7 +36,7 @@ public final class VoxygenConfig {
 	public static final class WorldgenProfile {
 		public boolean enabled = false;
 		// Diagnostic-only mode builds chunks but NEVER writes synthetic LOD to Voxy storage.
-		public boolean diagnosticOnly = false;
+		public boolean diagnosticOnly = true;
 		public List<String> datapacks = new ArrayList<>();
 		public String overworldNoiseSettings = "minecraft:overworld";
 		public String overworldBiomePreset = "minecraft:overworld";
