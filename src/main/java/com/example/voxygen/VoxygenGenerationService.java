@@ -2939,8 +2939,9 @@ final class VoxygenGenerationService {
 				return chunk.getNoiseBiome(quartX, quartY, quartZ);
 			}
 			// In 26.3 this must come from the seeded generator biome source, NEVER an arbitrary chunk.
-			return context.generator.getBiomeSource().getNoiseBiome(
-					quartX, quartY, quartZ, context.randomState.sampler());
+			return context.generator.getBiomeSource()
+					.createUncachedResolver(context.randomState)
+					.getNoiseBiome(quartX, quartY, quartZ);
 		}
 
 		private Object invokeDefaultOrReturnZero(Object proxy, Method method, Object[] args)
