@@ -2935,9 +2935,10 @@ final class VoxygenGenerationService {
 			int quartY = (int) args[1];
 			int quartZ = (int) args[2];
 			ProtoChunk chunk = viewChunkAt(Math.floorDiv(quartX, 4), Math.floorDiv(quartZ, 4));
-			if (chunk != null) {
+			if (chunk != null && !chunk.getPersistedStatus().isBefore(ChunkStatus.BIOMES)) {
 				return chunk.getNoiseBiome(quartX, quartY, quartZ);
 			}
+			// Never read biomes from a chunk before its BIOMES step has completed.
 			// In 26.3 this must come from the seeded generator biome source, NEVER an arbitrary chunk.
 			return context.generator.getBiomeSource()
 					.createUncachedResolver(context.randomState)
