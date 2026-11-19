@@ -2,20 +2,29 @@
   "enable": true,
   "showProgress": true,
   "generateForFreecam": false,
-  "radius": 64,
+  "radius": 32,
   "threads": 4,
   "seeds": {
-    "sundrone.tplinkdns.com": 493136979358296900,
-    "pi.serveminecraft.net": 493136979358296900
+    "pi.serveminecraft.net": 493136979358296900,
+    "sundrone.tplinkdns.com": 493136979358296900
   },
   "requireWorldgenProfileInMultiplayer": true,
   "worldgenProfiles": {
-    "sundrone.tplinkdns.com": {
+    "pi.serveminecraft.net": {
       "enabled": true,
       "datapacks": [
-        "Terralith.zip",
-        "Tectonic.zip",
-        "Terratonic.zip"
+        "Terralith_v2.6.5+26.3.zip",
+        "terratonic-datapack-3.0.31.zip",
+        "Dungeons and Taverns v6.1.0.zip",
+        "DnT Desert Temple Overhaul v2.2.zip",
+        "DnT Jungle Temple Overhaul v2.2.zip",
+        "DnT Nether Fortress Overhaul 3.2.1.zip",
+        "DnT Ocean Monument Overhaul v2.3.zip",
+        "DnT Stronghold Overhaul 3.0.1.zip",
+        "Structory_v1.3.18+26.3.zip",
+        "t_and_t-datapack-26.3.zip",
+        "Grim kingdoms (1.21+ 26.2+).zip",
+        "NotEnoughTrials-v4.2-Funky-MC26.3-REPAIRED-v7-EXPERIMENTAL.zip"
       ],
       "overworldNoiseSettings": "minecraft:overworld",
       "overworldBiomePreset": "minecraft:overworld",
@@ -23,12 +32,21 @@
       "spawnX": 0,
       "spawnZ": 0
     },
-    "pi.serveminecraft.net": {
+    "sundrone.tplinkdns.com": {
       "enabled": true,
       "datapacks": [
-        "Terralith.zip",
-        "Tectonic.zip",
-        "Terratonic.zip"
+        "Terralith_v2.6.5+26.3.zip",
+        "terratonic-datapack-3.0.31.zip",
+        "Dungeons and Taverns v6.1.0.zip",
+        "DnT Desert Temple Overhaul v2.2.zip",
+        "DnT Jungle Temple Overhaul v2.2.zip",
+        "DnT Nether Fortress Overhaul 3.2.1.zip",
+        "DnT Ocean Monument Overhaul v2.3.zip",
+        "DnT Stronghold Overhaul 3.0.1.zip",
+        "Structory_v1.3.18+26.3.zip",
+        "t_and_t-datapack-26.3.zip",
+        "Grim kingdoms (1.21+ 26.2+).zip",
+        "NotEnoughTrials-v4.2-Funky-MC26.3-REPAIRED-v7-EXPERIMENTAL.zip"
       ],
       "overworldNoiseSettings": "minecraft:overworld",
       "overworldBiomePreset": "minecraft:overworld",
